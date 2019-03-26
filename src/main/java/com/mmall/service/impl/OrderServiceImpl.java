@@ -60,11 +60,9 @@ import java.util.Random;
 @Service("iOrderService")
 public class OrderServiceImpl implements IOrderService {
 
-
     private static AlipayTradeService tradeService;
 
     static {
-
         /** 一定要在创建AlipayTradeService之前调用Configs.init()设置默认参数
          *  Configs会读取classpath下的zfbinfo.properties文件配置信息，如果找不到该文件则确认该文件是否在classpath目录
          */
@@ -379,20 +377,16 @@ public class OrderServiceImpl implements IOrderService {
         }
         resultMap.put("orderNo", String.valueOf(order.getOrderNo()));
 
-
         // (必填) 商户网站订单系统中唯一订单号，64个字符以内，只能包含字母、数字、下划线，
         // 需保证商户系统端不能重复，建议通过数据库sequence生成，
         String outTradeNo = order.getOrderNo().toString();
 
-
         // (必填) 订单标题，粗略描述用户的支付目的。如“xxx品牌xxx门店当面付扫码消费”
         String subject = new StringBuilder().append("happymmall扫码支付,订单号:").append(outTradeNo).toString();
-
 
         // (必填) 订单总金额，单位为元，不能超过1亿元
         // 如果同时传入了【打折金额】,【不可打折金额】,【订单总金额】三者,则必须满足如下条件:【订单总金额】=【打折金额】+【不可打折金额】
         String totalAmount = order.getPayment().toString();
-
 
         // (可选) 订单不可打折金额，可以配合商家平台配置折扣活动，如果酒水不参与打折，则将对应金额填写至此字段
         // 如果该值未传入,但传入了【订单总金额】,【打折金额】,则该值默认为【订单总金额】-【打折金额】
@@ -405,7 +399,6 @@ public class OrderServiceImpl implements IOrderService {
 
         // 订单描述，可以对交易或商品进行一个详细地描述，比如填写"购买商品2件共15.00元"
         String body = new StringBuilder().append("订单").append(outTradeNo).append("购买商品共").append(totalAmount).append("元").toString();
-
 
         // 商户操作员编号，添加此参数可以为商户操作员做销售统计
         String operatorId = "test_operator_id";
@@ -425,9 +418,11 @@ public class OrderServiceImpl implements IOrderService {
 
         List<OrderItem> orderItemList = orderItemMapper.getByOrderNoUserId(orderNo, userId);
         for (OrderItem orderItem : orderItemList) {
-            GoodsDetail goods = GoodsDetail.newInstance(orderItem.getProductId().toString(), orderItem.getProductName(),
-                    BigDecimalUtil.mul(orderItem.getCurrentUnitPrice().doubleValue(), new Double(100).doubleValue()).longValue(),
-                    orderItem.getQuantity());
+            String goodsId = orderItem.getProductId().toString();
+            String productName = orderItem.getProductName();
+            long price = BigDecimalUtil.mul(orderItem.getCurrentUnitPrice().doubleValue(), new Double(100).doubleValue()).longValue();
+            Integer quantity = orderItem.getQuantity();
+            GoodsDetail goods = GoodsDetail.newInstance(goodsId, productName, price, quantity);
             goodsDetailList.add(goods);
         }
 
@@ -446,7 +441,6 @@ public class OrderServiceImpl implements IOrderService {
                 .setGoodsDetailList(goodsDetailList)
                 .setNotifyUrl(PropertiesUtil.getProperty("alipay.callback.url"));//支付宝服务器主动通知商户服务器里指定的页面http路径,根据需要设置
 
-
         AlipayF2FPrecreateResult result = tradeService.tradePrecreate(builder);
         switch (result.getTradeStatus()) {
             case SUCCESS:
@@ -462,12 +456,12 @@ public class OrderServiceImpl implements IOrderService {
                     folder.mkdirs();
                 }
 
-                // 需要修改为运行机器上的路径 二维码图片文件名前加"/"
+                // 需要修改为运行机器上的路径 (二维码图片文件名前加"/")
                 String qrPath = String.format(path + "/qr-%s.png", response.getOutTradeNo());
                 // 生成二维码图片到指定路径下
                 ZxingUtils.getQRCodeImge(response.getQrCode(), 256, qrPath);
 
-                //将生成好的二维码图片读取，从本地上传到FTP服务器
+                // 将生成好的二维码图片读取，从本地上传到FTP服务器
                 String qrFileName = String.format("qr-%s.png", response.getOutTradeNo());
                 File targetFile = new File(path, qrFileName);
                 try {
@@ -483,11 +477,9 @@ public class OrderServiceImpl implements IOrderService {
             case FAILED:
                 logger.error("支付宝预下单失败!!!");
                 return ServerResponse.createByErrorMessage("支付宝预下单失败!!!");
-
             case UNKNOWN:
                 logger.error("系统异常，预下单状态未知!!!");
                 return ServerResponse.createByErrorMessage("系统异常，预下单状态未知!!!");
-
             default:
                 logger.error("不支持的交易状态，交易返回异常!!!");
                 return ServerResponse.createByErrorMessage("不支持的交易状态，交易返回异常!!!");
