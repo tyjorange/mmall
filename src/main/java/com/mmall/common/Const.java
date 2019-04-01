@@ -74,10 +74,10 @@ public class Const {
             return code;
         }
 
-        public static OrderStatusEnum codeOf(int code){
+        public static String codeOf(int code){
             for(OrderStatusEnum orderStatusEnum : values()){
                 if(orderStatusEnum.getCode() == code){
-                    return orderStatusEnum;
+                    return orderStatusEnum.getValue();
                 }
             }
             throw new RuntimeException("么有找到对应的枚举");
@@ -131,10 +131,10 @@ public class Const {
         }
 
 
-        public static PaymentTypeEnum codeOf(int code){
+        public static String codeOf(int code){
             for(PaymentTypeEnum paymentTypeEnum : values()){
                 if(paymentTypeEnum.getCode() == code){
-                    return paymentTypeEnum;
+                    return paymentTypeEnum.getValue();
                 }
             }
             throw new RuntimeException("么有找到对应的枚举");
